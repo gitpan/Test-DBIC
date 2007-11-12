@@ -1,0 +1,21 @@
+inc/Module/AutoInstall.pm
+inc/Module/Install.pm
+inc/Module/Install/AutoInstall.pm
+inc/Module/Install/Base.pm
+inc/Module/Install/Can.pm
+inc/Module/Install/Fetch.pm
+inc/Module/Install/Include.pm
+inc/Module/Install/Makefile.pm
+inc/Module/Install/Metadata.pm
+inc/Module/Install/Win32.pm
+inc/Module/Install/WriteAll.pm
+lib/Test/DBIC.pm
+lib/Test/DBIC/Schema.pm
+Makefile.PL
+MANIFEST			This list of files
+META.yml
+t/lib/MyApp/Schema/Bar.pm
+t/lib/MyApp/Schema/Person.pm
+t/lib/sqlite.sql
+t/sqlite.t
+t/var/sample_data.txt
