@@ -20,7 +20,8 @@ build_requires 'Test::Builder::Module'    => 0;
 build_requires 'Class::Accessor::Grouped' => 0;
 build_requires 'File::Spec::Functions'    => 0;
 
-#recommends      'Your::OtherModule' => '0.01';
+# Not required, but can be used if they are available
+recommends 'SQL::Translator' => 0;
 
 auto_install;
 WriteAll;

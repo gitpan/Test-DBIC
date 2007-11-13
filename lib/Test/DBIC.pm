@@ -27,12 +27,22 @@ In your test script add this block:
 
 This module facilitates testing of DBIx::Class components.
 
+It is planned that this module will supercede or be superceeded
+by the testing module distributed within DBIx::Class.  The hope
+is for this merge to happen in the 0.09x release of DBIx::Class.
+
+This module allows you to use the testing functionality before
+it is released as a core component of DBIx::Class.  In other words,
+the API might change, but if you need to test, this module is
+available as a bleeding-edge version before the next major version
+of DBIx::Class is released.
+
 =cut
 
 use strict;
 use warnings;
 
-our $VERSION = '0.01001';
+our $VERSION = '0.01002';
 
 BEGIN {
     # little trick by Ovid to pretend to subclass+exporter Test::More
@@ -228,7 +238,20 @@ sub deploy_schema {
 
     eval 'use SQL::Translator';
     if (!$@ && ($options{'sqlt_deploy'} or $ENV{"DBICTEST_SQLT_DEPLOY"})) {
+        if (my $existing_namespace = $options{'existing_namespace'} || '') {
+            foreach my $tableclass ($self->tableclasses_to_load($schema, %options)) {
+                $schema->load_classes({
+                    $existing_namespace => [$tableclass],
+                });
+            }
+            my @tables = ();
+            foreach my $source ($schema->sources) {
+                push @tables, $schema->source($source)->from;
+            };
+            $self->attach_dbfile($schema, \%options, \@tables);
+        }
         eval {
+            #diag join("\n", $schema->storage->deployment_statements($schema), '');
             $schema->deploy();
         };
         if ($@ && !$eval) {
@@ -238,22 +261,7 @@ sub deploy_schema {
         my $sql = slurp(catfile('t', 'lib', 'sqlite.sql'));
         if ($sql) {
             my (@tables) = $sql =~ m/create\s+table\s+(.+?)(?:\s*\()/gi;
-            my %seen = ();
-            foreach my $table (@tables) {
-                if (index($table, '.') > 0) {
-                    my ($prefix) = $table =~ m/^(.+?)\./;
-                    # diag "$table is under schema $prefix\n";
-                    next if $seen{$prefix}++;
-                    my $dbh = $schema->storage->dbh;
-                    if ($dbh->{Driver}{Name} eq 'SQLite') {
-                        my $db_dir  = $options{'db_dir'}  || $self->db_dir;
-                        my $db_file = $options{'db_file'} || $self->db_file;
-                        my $db = catfile($db_dir, $db_file);
-                        # diag "attaching file $db.$prefix as schema $prefix\n";
-                        $dbh->do("attach '$db.$prefix' as $prefix");
-                    }
-                }
-            }
+            $self->attach_dbfile($schema, \%options, \@tables);
             eval {
                 ($schema->storage->dbh->do($_) || print "Error on SQL: $_\n") for split(/;\n/, $sql);
             };
@@ -265,6 +273,26 @@ sub deploy_schema {
         }
     };
 };
+
+sub attach_dbfile {
+    my ($self, $schema, $options, $tables) = @_;
+    my %seen = ();
+    foreach my $table (@$tables) {
+        if (index($table, '.') > 0) {
+            my ($prefix) = $table =~ m/^(.+?)\./;
+            # diag "$table is under schema $prefix\n";
+            next if $seen{$prefix}++;
+            my $dbh = $schema->storage->dbh;
+            if ($dbh->{Driver}{Name} eq 'SQLite') {
+                my $db_dir  = $options->{'db_dir'}  || $self->db_dir;
+                my $db_file = $options->{'db_file'} || $self->db_file;
+                my $db = catfile($db_dir, $db_file);
+                #diag "attaching file $db.$prefix as schema $prefix\n";
+                $dbh->do("attach '$db.$prefix' as $prefix");
+            }
+        }
+    }
+}
 
 sub slurp {
     my $file = shift;
@@ -314,6 +342,18 @@ sub populate_schema {
     }
 };
 
+sub tableclasses_to_load {
+    my ($self, $schema, %options) = @_;
+    my @classes = ();
+    if ($options{'sample_data_file'}) {
+        push @classes, $self->tableclasses_from_file($schema, %options);
+    }
+    if ($options{'sample_data'}) {
+        push @classes, $self->tableclasses_from_array($schema, %options);
+    }
+    return @classes;
+}
+
 sub populate_from_file {
     my ($self, $schema, %options) = @_;
     # expects a file in the format
@@ -358,6 +398,34 @@ sub populate_from_file {
     @data = ();
 }
 
+sub tableclasses_from_file {
+    my ($self, $schema, %options) = @_;
+    # expects a file in the format
+    # tableclass_name
+    # column1, column2, column3
+    # data1, data2, data3
+    # data1, data2, data3
+    # ---
+    # tableclass_name
+    # ...
+    use IO::File;
+    my $fh = IO::File->new($options{'sample_data_file'}) || diag "failed to read sample data file: $options{'sample_data_file'}: $!\n";
+    return unless $fh;
+    my @classes = ();
+    my $tableclass;
+    while (my $line = $fh->getline) {
+        chomp($line);
+        if ($line eq '---') {
+            undef $tableclass;
+        } elsif (!defined($tableclass)) {
+            $tableclass = $line;
+            push @classes, $tableclass;
+            #diag "preparing to populate $tableclass\n";
+        }
+    }
+    return @classes;
+}
+
 sub populate_from_array {
     my ($self, $schema, %options) = @_;
     return unless (ref($options{'sample_data'}) eq 'ARRAY');
@@ -369,6 +437,18 @@ sub populate_from_array {
         $self->populate_table($schema, \%options, $tableclass, $columns, $data);
         unshift(@$data, $columns); # put things back how we found them
     }
+}
+
+sub tableclasses_from_array {
+    my ($self, $schema, %options) = @_;
+    return unless (ref($options{'sample_data'}) eq 'ARRAY');
+    my @classes = ();
+    my $c = 0;
+    while ($c < @{$options{'sample_data'}}) {
+        push @classes, $options{'sample_data'}[$c++];
+        $c++; # ignore datasets
+    }
+    return @classes;
 }
 
 sub populate_table {

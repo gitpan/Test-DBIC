@@ -18,4 +18,5 @@ t/lib/MyApp/Schema/Bar.pm
 t/lib/MyApp/Schema/Person.pm
 t/lib/sqlite.sql
 t/sqlite.t
+t/sqlite_sqlt.t
 t/var/sample_data.txt

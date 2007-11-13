@@ -1,6 +1,7 @@
 --- 
 abstract: Facilitates Automated Testing for DBIx::Class
-author: Nathan Gray <kolibrie@cpan.org>
+author: 
+  - Nathan Gray <kolibrie@cpan.org>
 build_requires: 
   Class::Accessor::Grouped: 0
   DBD::SQLite: 1.11
@@ -8,7 +9,7 @@ build_requires:
   Test::Builder::Module: 0
   Test::More: 0.42
 distribution_type: module
-generated_by: Module::Install version 0.67
+generated_by: Module::Install version 0.68
 license: perl
 meta-spec: 
   url: http://module-build.sourceforge.net/META-spec-v1.3.html
@@ -18,8 +19,10 @@ no_index:
   directory: 
     - inc
     - t
+recommends: 
+  SQL::Translator: 0
 requires: 
   Class::Accessor::Grouped: 0.03
   DBIx::Class: 0.07005
   perl: 5.6.1
-version: 0.01001
+version: 0.01002
