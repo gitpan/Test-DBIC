@@ -42,7 +42,7 @@ of DBIx::Class is released.
 use strict;
 use warnings;
 
-our $VERSION = '0.01002';
+our $VERSION = '0.01003';
 
 BEGIN {
     # little trick by Ovid to pretend to subclass+exporter Test::More

@@ -21,7 +21,7 @@ build_requires 'Class::Accessor::Grouped' => 0;
 build_requires 'File::Spec::Functions'    => 0;
 
 # Not required, but can be used if they are available
-recommends 'SQL::Translator' => 0;
+recommends 'SQL::Translator' => '0.08';
 
 auto_install;
 WriteAll;

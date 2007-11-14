@@ -1,0 +1,151 @@
+NAME
+    Test::DBIC - Facilitates Automated Testing for DBIx::Class
+
+SYNOPSIS
+    In your test script add this block:
+
+      BEGIN {
+          use Test::DBIC;
+
+          eval 'require DBD::SQLite';
+          if ($@) {
+              plan skip_all => 'DBD::SQLite not installed';
+          } else {
+              plan tests => 1;  # change this to the correct number of tests
+          }
+      };
+
+      my $schema = Test::DBIC->init_schema(
+          sample_data_file => 't/var/sample_data.txt',
+      );
+
+DESCRIPTION
+    This module facilitates testing of DBIx::Class components.
+
+    It is planned that this module will supercede or be superceeded by the
+    testing module distributed within DBIx::Class. The hope is for this
+    merge to happen in the 0.09x release of DBIx::Class.
+
+    This module allows you to use the testing functionality before it is
+    released as a core component of DBIx::Class. In other words, the API
+    might change, but if you need to test, this module is available as a
+    bleeding-edge version before the next major version of DBIx::Class is
+    released.
+
+  Methods
+    db_dir
+        Gets/sets the directory where SQLite database files will be stored.
+
+          Test::DBIC->db_dir(catdir('t', 'var'));
+
+    db_file
+        Gets/sets the name of the main SQLite database file.
+
+          Test::DBIC->db_file('test.db');
+
+    init_schema
+        Removes the test database under "db_dir" and then sets up a new test
+        database and returns a DBIx::Class schema object for your test to
+        use.
+
+        Parameters are:
+
+        existing_namespace
+            Look for ResultSource (table definition) classes under this
+            namespace, rather than in the schema namespace specified by
+            "schema_class".
+
+        namespace
+            Subclass ResultSet objects into this namespace. Objects that you
+            get back will be under this namespace.
+
+        no_deploy
+            If true, will not set up a test database nor populate it with
+            sample data.
+
+        sqlt_deploy
+            If true, will call the experimental $schema->deploy(). Also
+            triggered if the DBICTEST_SQLT_DEPLOY environment variable is
+            set.
+
+            The default is to read the file t/lib/sqlite.sql and execute the
+            SQL within.
+
+        eval_deploy
+            If true, and if using "sqlt_deploy", will not die when the test
+            database fails to initialize.
+
+        no_populate
+            If true, will not populate the test database with sample data.
+
+        clear
+            If true, will delete any existing data in the test database
+            before populating with sample data.
+
+        sample_data
+            Specifies data to use when populating the test database.
+
+            The format is:
+
+              'sample_data' => [
+                  ResultSourceName => [
+                      ['column1', 'column2', 'column3'],
+                      ['data1', 'data2', 'data3'],
+                      ['data1', 'data2', 'data3'],
+                  ],
+                  ResultSourceName => [
+                      ...
+                  ],
+              ],
+
+            The ResultSourceName is the string passed to $schema->resultset.
+
+        sample_data_file
+            Specifies a file which contains data to use when populating the
+            test database.
+
+            The format for the file is:
+
+              ResultSourceName
+              column1, column2, column3
+              data1, data2, data3
+              data1, data2, data3
+              ---
+              ResultSourceName
+              ...
+
+            The ResultSourceName is the string passed to $schema->resultset.
+
+            Data for multiple tables may be specified, with a separator line
+            of "---" between them.
+
+        schema_class
+            The name of the DBIx::Class schema to use. Defaults to
+            "Test::DBIC::Schema".
+
+    deploy_schema
+        Called by "init_schema". Creates tables in the test database.
+
+    clear_schema
+        Called before populating the test database, if "clear" has been set
+        to true. Deletes data from known tables.
+
+    populate_schema
+        Called by "init_schema". Loads sample data into the test database.
+
+SEE ALSO
+    DBIx::Class
+
+AUTHOR
+    Nathan Gray <kolibrie@cpan.org>
+
+    based on DBICTest (from the testsuite of DBIx::Class) and DBIC::Test
+    (from the testsuite of DBIx::Class::InflateColumn::Currency)
+
+COPYRIGHT AND LICENSE
+    Copyright (C) 2007 by Nathan Gray
+
+    This library is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself, either Perl version 5.8.8 or, at
+    your option, any later version of Perl 5 you may have available.
+

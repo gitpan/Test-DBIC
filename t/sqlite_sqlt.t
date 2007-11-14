@@ -13,6 +13,8 @@ BEGIN {
     $missing{'SQL::Translator'}++ if $@;
     if (keys %missing) {
         plan skip_all => 'dependencies not installed: ' . join(', ', sort keys %missing);
+    } elsif (SQL::Translator->VERSION < 0.08) {
+        plan skip_all => 'dependencies not installed: SQL::Translator version 0.08 required--this is only version ' . SQL::Translator->VERSION;
     } else {
         plan tests => 6;
     }
